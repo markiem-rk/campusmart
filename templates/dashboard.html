@@ -1,0 +1,110 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+        <button onclick="getInsights()" id="aiBtn" class="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+            <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
+            <span id="aiBtnText">Get AI Insights</span>
+        </button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Total Revenue</p>
+                <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(total_revenue) }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Items in Stock</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_items }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Low Stock Alerts</p>
+                <p class="text-2xl font-bold text-gray-900">{{ low_stock }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insight Container -->
+    <div id="aiContainer" class="hidden bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-100">
+        <div class="flex items-start">
+            <i data-lucide="sparkles" class="w-5 h-5 text-purple-600 mt-1 mr-3 flex-shrink-0"></i>
+            <div>
+                <h3 class="text-lg font-semibold text-purple-900 mb-2">AI Business Analysis</h3>
+                <div id="aiContent" class="text-purple-800 whitespace-pre-line prose prose-purple"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+        <div class="space-y-4">
+            {% if transactions %}
+                {% for tx in transactions %}
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm mr-3">
+                            ${{ "%.0f"|format(tx['total']) }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ tx['item_count'] }} items sold</p>
+                            <p class="text-xs text-gray-500">{{ tx['timestamp'] }}</p>
+                        </div>
+                    </div>
+                    <span class="font-semibold text-gray-900">${{ "%.2f"|format(tx['total']) }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-gray-400 py-6">No recent transactions</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function getInsights() {
+    const btn = document.getElementById('aiBtn');
+    const btnText = document.getElementById('aiBtnText');
+    const container = document.getElementById('aiContainer');
+    const content = document.getElementById('aiContent');
+
+    btn.disabled = true;
+    btnText.innerText = "Analyzing...";
+    
+    try {
+        const res = await fetch('/api/analyze-business', { method: 'POST' });
+        const data = await res.json();
+        
+        container.classList.remove('hidden');
+        content.innerText = data.insight;
+        btnText.innerText = "Refresh Insights";
+    } catch (e) {
+        console.error(e);
+        alert('Failed to generate insights');
+        btnText.innerText = "Get AI Insights";
+    } finally {
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
